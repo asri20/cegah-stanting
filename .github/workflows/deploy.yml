@@ -1,0 +1,46 @@
+name: CI/CD - Tumbuh Cerah
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Login to ECR
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_URI }}
+      - name: Build & Push Image
+        run: |
+          docker build -t tumbuh-cerah .
+          docker tag tumbuh-cerah:latest ${{ secrets.ECR_URI }}:latest
+          docker push ${{ secrets.ECR_URI }}:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_URI }}
+            docker pull ${{ secrets.ECR_URI }}:latest
+            docker stop app || true
+            docker rm app || true
+            docker run -d --name app -p 80:8000 \
+              -e DB_USER=${{ secrets.DB_USER }} \
+              -e DB_PASS=${{ secrets.DB_PASS }} \
+              -e DB_HOST=${{ secrets.DB_HOST }} \
+              -e DB_NAME=${{ secrets.DB_NAME }} \
+              -e S3_BUCKET=${{ secrets.S3_BUCKET }} \
+              -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+              -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+              ${{ secrets.ECR_URI }}:latest

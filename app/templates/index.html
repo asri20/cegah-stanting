@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tumbuh Cerah</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; }
+        .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; max-width: 400px; }
+        input { display: block; margin-bottom: 10px; width: 100%; }
+    </style>
+</head>
+<body>
+    <h1>Sistem Kesehatan: Tumbuh Cerah</h1>
+    
+    <div class="card">
+        <h3>Input Data & Foto Anak</h3>
+        <form action="/submit" method="post" enctype="multipart/form-data">
+            <input type="text" name="nama" placeholder="Nama Anak" required>
+            <input type="text" name="berat" placeholder="Berat Badan (kg)" required>
+            <label>Upload Foto KMS:</label>
+            <input type="file" name="file" required>
+            <button type="submit">Kirim Data</button>
+        </form>
+    </div>
+</body>
+</html>
